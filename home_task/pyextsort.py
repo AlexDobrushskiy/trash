@@ -37,11 +37,16 @@ def separate_to_small_parts(input_file, memory_limit):
     return tmp_files
 
 
-def sort_list_by_timestamp():
+def record_timestamp(record):
+    """
+    This method can be used as a key for compairing records by timestamp.
+    :param arg: String of sotring file: '<email> <timestamp_iso> <id>'
+    (i.e. record of our input file)
+    :return: Datetime object representing second word of given string.
+    """
     convert_to_dt = lambda date_string: datetime.strptime(date_string,
                                                           '%Y-%m-%dT%H:%M:%S')
-    result = lambda x: convert_to_dt(x.split()[1])
-    return result
+    return convert_to_dt(record.split()[1])
 
 
 def sort_file_by_timestamp(filename):
@@ -49,7 +54,7 @@ def sort_file_by_timestamp(filename):
     tmp_file = f.readlines()
     f.close()
 
-    tmp_file.sort(key=sort_list_by_timestamp())
+    tmp_file.sort(key=record_timestamp)
 
     f = open(filename, 'w')
     f.writelines(tmp_file)
@@ -74,7 +79,7 @@ def merge_sorted_files(input_files, output_file):
         local_list.append((index, file_obj.next()))
 
     while sorted_files:
-        local_list.sort(key=lambda x: sort_list_by_timestamp()(x[1]))
+        local_list.sort(key=lambda x: record_timestamp(x[1]))
         index, string_to_write = local_list[0]
         del local_list[0]
         output.write(string_to_write)
