@@ -4,6 +4,7 @@
 __author__ = 'Alex Dobrushskiy'
 
 from datetime import datetime
+from time import time
 # from argparse import ArgumentParser
 #
 # parser = ArgumentParser(description='PyExtSort arguments parser')
@@ -15,40 +16,49 @@ def write_tmp_file(filename, buff, file_list):
     f.close()
     file_list.append(filename)
 
-cpus = 1
-#bytes
-memory_limit = 20000
-input_file = 'gen_data.dat'
-output_file = 'output.dat'
-input = open(input_file)
 
-mem_in_use = 0
-tmp_file_index = 0
-tmp_files = []
-buff = ''
-for line in input:
-    mem_in_use += len(line)
-    if mem_in_use >= memory_limit:
-        write_tmp_file('tmp_file'+str(tmp_file_index), buff, tmp_files)
+def separate_to_small(input_file, memory_limit):
+    input = open(input_file)
+    mem_in_use = 0
+    tmp_file_index = 0
+    tmp_files = []
+    buff = ''
+    for line in input:
+        mem_in_use += len(line)
+        if mem_in_use >= memory_limit:
+            write_tmp_file('tmp_file' + str(tmp_file_index), buff, tmp_files)
 
-        mem_in_use = len(line)
-        tmp_file_index += 1
-        buff = ''
-    buff += line
+            mem_in_use = len(line)
+            tmp_file_index += 1
+            buff = ''
+        buff += line
+    write_tmp_file('tmp_file' + str(tmp_file_index), buff, tmp_files)
+    return tmp_files
 
-write_tmp_file('tmp_file'+str(tmp_file_index), buff, tmp_files)
-# TODO Вынести всю логику разбиения на файлы в процедуру
 
-for tmp_file_name in tmp_files:
-    f = open(tmp_file_name)
-    tmp_file = f.readlines()
-    f.close()
+if __name__ == '__main__':
+    #--------------------------
+    #Global config
+    # TODO Move to command line parameters
+    cpus = 1
+    #in bytes
+    memory_limit = 20000
+    input_file = 'gen_data.dat'
+    output_file = 'output.dat'
+    #-------------------------------
 
-    convert_to_dt = lambda date_string: datetime.strptime(date_string,
-                                                          '%Y-%m-%dT%H:%M:%S')
-    tmp_file.sort(key=lambda x: convert_to_dt(x.split()[1]))
+    tmp_files = separate_to_small(input_file, memory_limit)
 
-    f = open(tmp_file_name, 'w')
-    f.writelines(tmp_file)
-    f.close()
+    for tmp_file_name in tmp_files:
+        f = open(tmp_file_name)
+        tmp_file = f.readlines()
+        f.close()
 
+        convert_to_dt = lambda date_string: datetime.strptime(date_string,
+                                                              '%Y-%m-%dT%H:%M:%S')
+        tmp_file.sort(key=lambda x: convert_to_dt(x.split()[1]))
+
+        f = open(tmp_file_name, 'w')
+        f.writelines(tmp_file)
+        f.close()
+        #TODO вынести логику из цикла в отдельный метод
