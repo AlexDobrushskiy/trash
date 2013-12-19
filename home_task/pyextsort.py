@@ -37,14 +37,19 @@ def separate_to_small_parts(input_file, memory_limit):
     return tmp_files
 
 
+def sort_list_by_timestamp():
+    convert_to_dt = lambda date_string: datetime.strptime(date_string,
+                                                          '%Y-%m-%dT%H:%M:%S')
+    result = lambda x: convert_to_dt(x.split()[1])
+    return result
+
+
 def sort_file_by_timestamp(filename):
     f = open(filename)
     tmp_file = f.readlines()
     f.close()
 
-    convert_to_dt = lambda date_string: datetime.strptime(date_string,
-                                                          '%Y-%m-%dT%H:%M:%S')
-    tmp_file.sort(key=lambda x: convert_to_dt(x.split()[1]))
+    tmp_file.sort(key=sort_list_by_timestamp())
 
     f = open(filename, 'w')
     f.writelines(tmp_file)
@@ -67,10 +72,31 @@ if __name__ == '__main__':
         # нужно распараллелить
         sort_file_by_timestamp(tmp_file_name)
 
-    # # Now let's merge all sorted files into one
-    # output = open('output_file', 'w')
-    # sorted_files = []
-    #
-    # # можно распараллелить
-    # for small in tmp_files:
-    #     sorted_files.append(open(small))
+    # Now let's merge all sorted files into one
+    output = open('output_file', 'w')
+    sorted_files = []
+
+    # можно распараллелить
+    # если всего n процессоров, то номер любого файла %n дает число от 0 до n-1
+    # исходя из этого, выбираем ядра, которые будут обратывать конкретный файл
+    sorted_files = {}
+    for index, filename in tmp_files.items():
+        sorted_files[index] = open(filename)
+
+    local_list = []
+    #initially fill local_list
+    for index, file_obj in sorted_files.items():
+        # don't care about StopIretation exception. Assume that files are big enought.
+        local_list.append((index, file_obj.next()))
+
+    while sorted_files:
+        local_list.sort(key=lambda x: sort_list_by_timestamp()(x[1]))
+        index, string_to_write = local_list[0]
+        del local_list[0]
+        output.write(string_to_write)
+        try:
+            local_list.append((index, sorted_files[index].next()))
+        except StopIteration:
+            del sorted_files[index]
+    output.close()
+
