@@ -36,6 +36,19 @@ def separate_to_small(input_file, memory_limit):
     return tmp_files
 
 
+def sort_file_by_timestamp(filename):
+    f = open(filename)
+    tmp_file = f.readlines()
+    f.close()
+
+    convert_to_dt = lambda date_string: datetime.strptime(date_string,
+                                                          '%Y-%m-%dT%H:%M:%S')
+    tmp_file.sort(key=lambda x: convert_to_dt(x.split()[1]))
+
+    f = open(filename, 'w')
+    f.writelines(tmp_file)
+    f.close()    
+
 if __name__ == '__main__':
     #--------------------------
     #Global config
@@ -50,15 +63,5 @@ if __name__ == '__main__':
     tmp_files = separate_to_small(input_file, memory_limit)
 
     for tmp_file_name in tmp_files:
-        f = open(tmp_file_name)
-        tmp_file = f.readlines()
-        f.close()
-
-        convert_to_dt = lambda date_string: datetime.strptime(date_string,
-                                                              '%Y-%m-%dT%H:%M:%S')
-        tmp_file.sort(key=lambda x: convert_to_dt(x.split()[1]))
-
-        f = open(tmp_file_name, 'w')
-        f.writelines(tmp_file)
-        f.close()
-        #TODO вынести логику из цикла в отдельный метод
+        sort_file_by_timestamp(tmp_file_name)
+        
