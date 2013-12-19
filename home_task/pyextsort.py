@@ -101,6 +101,9 @@ def merge_sorted_files(input_files, output_file):
     which are assumed already sorted) to one file name 'output_file' which is sorted too.
 
     This can be upgraded by using heap instead of list in 'local_list' variable.
+    Now complexity is O(l*n*log(n)), where l - total number of records, n - number of
+    temporary files.
+    In case of using heap complexity will be O(l*n).
     """
     output = open(output_file, 'w')
 
@@ -115,6 +118,7 @@ def merge_sorted_files(input_files, output_file):
         local_list.append((index, file_obj.next()))
 
     while sorted_files:
+        # Complexity of this loop in O(l*n*log(n))  - see function docstring
         local_list.sort(key=lambda x: record_timestamp(x[1]))
         index, string_to_write = local_list[0]
         del local_list[0]
