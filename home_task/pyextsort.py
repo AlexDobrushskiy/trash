@@ -4,13 +4,27 @@
 __author__ = 'Alex Dobrushskiy'
 
 from datetime import datetime
-from time import time
-# from argparse import ArgumentParser
-#
-# parser = ArgumentParser(description='PyExtSort arguments parser')
+from argparse import ArgumentParser
+
+
+def process_args():
+    parser = ArgumentParser(description='PyExtSort args parser')
+    parser.add_argument('-c', action='store', dest='cpus', help="Number of CPU's",
+                        type=int)
+    parser.add_argument('-l', action='store', dest='memory_limit',
+                        help='Memory limit, bytes', type=int)
+    parser.add_argument("input_file")
+    parser.add_argument("output_file")
+    args = parser.parse_args()
+
+    return args
 
 
 def write_tmp_file(file_no, buff, file_list):
+    """
+    This method just writes 'buff' string array to file with name "tmp_file" + if
+    provided if 'file_no'. It updates 'file_list' dictionary with just created file name.
+    """
     filename = 'tmp_file' + str(file_no)
     f = open(filename, 'w')
     f.write(buff)
@@ -19,7 +33,16 @@ def write_tmp_file(file_no, buff, file_list):
 
 
 def separate_to_small_parts(input_file, memory_limit):
-    input = open(input_file)
+    """
+    This method reads 'input_file' and separates it to several files,
+    each is less or equal to 'memory_limit' bytes.
+    Returns dictionary with created file names as values and IDs as keys.
+    """
+    try:
+        input = open(input_file)
+    except IOError:
+        print "Please provide valid file name as input_file"
+        exit()
     mem_in_use = 0
     tmp_file_index = 0
     tmp_files = {}
@@ -46,10 +69,21 @@ def record_timestamp(record):
     """
     convert_to_dt = lambda date_string: datetime.strptime(date_string,
                                                           '%Y-%m-%dT%H:%M:%S')
-    return convert_to_dt(record.split()[1])
+    try:
+        result = convert_to_dt(record.split()[1])
+    except (IndexError, ValueError):
+        print "Some data in input file is incorrect. Please check your data."
+        exit()
+
+    return result
 
 
 def sort_file_by_timestamp(filename):
+    """
+    This method takes a file as an input and sorts it in RAM, overwriting.
+    It's assumed that file consists of records like '<email> <ISO timestamp> <id>'.
+    This uses ISO timestamp as sort key.
+    """
     f = open(filename)
     tmp_file = f.readlines()
     f.close()
@@ -62,12 +96,14 @@ def sort_file_by_timestamp(filename):
 
 
 def merge_sorted_files(input_files, output_file):
-    # Now let's merge all sorted files into one
+    """
+    Thie method merges files from 'input_files' dict {id:filename} (
+    which are assumed already sorted) to one file name 'output_file' which is sorted too.
+
+    This can be upgraded by using heap instead of list in 'local_list' variable.
+    """
     output = open(output_file, 'w')
 
-    # можно распараллелить
-    # если всего n процессоров, то номер любого файла %n дает число от 0 до n-1
-    # исходя из этого, выбираем ядра, которые будут обратывать конкретный файл
     sorted_files = {}
     for index, filename in input_files.items():
         sorted_files[index] = open(filename)
@@ -75,7 +111,7 @@ def merge_sorted_files(input_files, output_file):
     local_list = []
     #initially fill local_list
     for index, file_obj in sorted_files.items():
-        # don't care about StopIretation exception. Assume that files are big enought.
+        # don't care about StopIteration exception. There is not empty files.
         local_list.append((index, file_obj.next()))
 
     while sorted_files:
@@ -91,22 +127,14 @@ def merge_sorted_files(input_files, output_file):
 
 
 if __name__ == '__main__':
-    #--------------------------
-    #Global config
-    # TODO Move to command line parameters
-    cpus = 1
-    #in bytes
-    memory_limit = 20000
-    input_file = 'gen_data.dat'
-    output_file = 'output.dat'
-    #-------------------------------
+    args = process_args()
 
-    tmp_files = separate_to_small_parts(input_file, memory_limit)
+    tmp_files = separate_to_small_parts(args.input_file, args.memory_limit)
 
     for tmp_file_name in tmp_files.values():
         # нужно распараллелить
         sort_file_by_timestamp(tmp_file_name)
 
-    merge_sorted_files(tmp_files, output_file)
+    merge_sorted_files(tmp_files, args.output_file)
 
 
