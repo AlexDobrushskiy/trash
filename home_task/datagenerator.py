@@ -12,7 +12,7 @@ from datetime import datetime
 
 data = []
 now = int(time())
-for i in range(20):
+for i in range(10000):
     uname_len, domain_len = randint(3, 20), randint(3, 20)
     rand_word = lambda x: ''.join(choice(letters+digits) for i in range(x))
     email = rand_word(uname_len) + '@' + rand_word(domain_len) + '.' + \
