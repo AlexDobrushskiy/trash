@@ -55,32 +55,16 @@ def sort_file_by_timestamp(filename):
     f.writelines(tmp_file)
     f.close()    
 
-if __name__ == '__main__':
-    #--------------------------
-    #Global config
-    # TODO Move to command line parameters
-    cpus = 1
-    #in bytes
-    memory_limit = 20000
-    input_file = 'gen_data.dat'
-    output_file = 'output.dat'
-    #-------------------------------
 
-    tmp_files = separate_to_small_parts(input_file, memory_limit)
-
-    for tmp_file_name in tmp_files.values():
-        # нужно распараллелить
-        sort_file_by_timestamp(tmp_file_name)
-
+def merge_sorted_files(input_files, output_file):
     # Now let's merge all sorted files into one
-    output = open('output_file', 'w')
-    sorted_files = []
+    output = open(output_file, 'w')
 
     # можно распараллелить
     # если всего n процессоров, то номер любого файла %n дает число от 0 до n-1
     # исходя из этого, выбираем ядра, которые будут обратывать конкретный файл
     sorted_files = {}
-    for index, filename in tmp_files.items():
+    for index, filename in input_files.items():
         sorted_files[index] = open(filename)
 
     local_list = []
@@ -99,4 +83,25 @@ if __name__ == '__main__':
         except StopIteration:
             del sorted_files[index]
     output.close()
+
+
+if __name__ == '__main__':
+    #--------------------------
+    #Global config
+    # TODO Move to command line parameters
+    cpus = 1
+    #in bytes
+    memory_limit = 20000
+    input_file = 'gen_data.dat'
+    output_file = 'output.dat'
+    #-------------------------------
+
+    tmp_files = separate_to_small_parts(input_file, memory_limit)
+
+    for tmp_file_name in tmp_files.values():
+        # нужно распараллелить
+        sort_file_by_timestamp(tmp_file_name)
+
+    merge_sorted_files(tmp_files, output_file)
+
 
