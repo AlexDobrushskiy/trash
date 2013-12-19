@@ -10,29 +10,30 @@ from time import time
 # parser = ArgumentParser(description='PyExtSort arguments parser')
 
 
-def write_tmp_file(filename, buff, file_list):
+def write_tmp_file(file_no, buff, file_list):
+    filename = 'tmp_file' + str(file_no)
     f = open(filename, 'w')
     f.write(buff)
     f.close()
-    file_list.append(filename)
+    file_list[file_no] = filename
 
 
-def separate_to_small(input_file, memory_limit):
+def separate_to_small_parts(input_file, memory_limit):
     input = open(input_file)
     mem_in_use = 0
     tmp_file_index = 0
-    tmp_files = []
+    tmp_files = {}
     buff = ''
     for line in input:
         mem_in_use += len(line)
         if mem_in_use >= memory_limit:
-            write_tmp_file('tmp_file' + str(tmp_file_index), buff, tmp_files)
+            write_tmp_file(tmp_file_index, buff, tmp_files)
 
             mem_in_use = len(line)
             tmp_file_index += 1
             buff = ''
         buff += line
-    write_tmp_file('tmp_file' + str(tmp_file_index), buff, tmp_files)
+    write_tmp_file(tmp_file_index, buff, tmp_files)
     return tmp_files
 
 
@@ -60,8 +61,16 @@ if __name__ == '__main__':
     output_file = 'output.dat'
     #-------------------------------
 
-    tmp_files = separate_to_small(input_file, memory_limit)
+    tmp_files = separate_to_small_parts(input_file, memory_limit)
 
-    for tmp_file_name in tmp_files:
+    for tmp_file_name in tmp_files.values():
+        # нужно распараллелить
         sort_file_by_timestamp(tmp_file_name)
-        
+
+    # # Now let's merge all sorted files into one
+    # output = open('output_file', 'w')
+    # sorted_files = []
+    #
+    # # можно распараллелить
+    # for small in tmp_files:
+    #     sorted_files.append(open(small))
