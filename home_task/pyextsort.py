@@ -5,6 +5,7 @@ __author__ = 'Alex Dobrushskiy'
 
 from datetime import datetime
 from argparse import ArgumentParser
+from multiprocessing import Process
 
 
 def process_args():
@@ -16,7 +17,9 @@ def process_args():
     parser.add_argument("input_file")
     parser.add_argument("output_file")
     args = parser.parse_args()
-
+    if args.cpus < 1:
+        print "Number of CPU's should be at least 1!"
+        exit()
     return args
 
 
@@ -130,15 +133,42 @@ def merge_sorted_files(input_files, output_file):
     output.close()
 
 
+def sort_several_files(files):
+    for tmp_file_name in files.values():
+        sort_file_by_timestamp(tmp_file_name)
+
+
+def pack_files_for_processes(cpus, all_files):
+    """
+    This method puts 'all_files' into several heaps according to CPU's number
+        received.
+    """
+    files_for_processes = {}
+    for id, filename in all_files.items():
+        if id % cpus not in files_for_processes:
+            files_for_processes[id % args.cpus] = {id: filename}
+        else:
+            files_for_processes[id % args.cpus][id] = filename
+    return files_for_processes
+
+
 if __name__ == '__main__':
     args = process_args()
 
     tmp_files = separate_to_small_parts(args.input_file, args.memory_limit)
 
-    for tmp_file_name in tmp_files.values():
-        # нужно распараллелить
-        sort_file_by_timestamp(tmp_file_name)
+    files_for_processes = pack_files_for_processes(args.cpus, tmp_files)
 
+    processes = []
+    for i in range(args.cpus):
+        if files_for_processes.get(i):
+            processes.append(Process(target=sort_several_files, args=(files_for_processes[i],)))
+
+    for thread in processes:
+        thread.start()
+
+    for thread in processes:
+        thread.join()
     merge_sorted_files(tmp_files, args.output_file)
 
 
