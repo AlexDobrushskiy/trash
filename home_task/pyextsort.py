@@ -176,17 +176,9 @@ if __name__ == '__main__':
 
     files_for_processes = pack_files_for_processes(args.cpus, tmp_files)
 
-    processes = []
-    for i in range(args.cpus):
-        if files_for_processes.get(i):
-            processes.append(Process(target=sort_several_files, args=(files_for_processes[i],)))
-
-    for process in processes:
-        process.start()
-
-    for process in processes:
-        process.join()
-
+    for tmp_file_name in tmp_files.values():
+        sort_file_by_timestamp(tmp_file_name)
+        
     tmp_merged_files = {}
     processes = []
     for i in range(args.cpus):
