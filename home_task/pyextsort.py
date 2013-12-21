@@ -150,11 +150,6 @@ def merge_sorted_files(input_files, output_file):
     output.close()
 
 
-def sort_several_files(files):
-    for tmp_file_name in files.values():
-        sort_file_by_timestamp(tmp_file_name)
-
-
 def pack_files_for_processes(cpus, all_files):
     """
     This method puts 'all_files' into several heaps according to CPU's number
@@ -178,7 +173,7 @@ if __name__ == '__main__':
 
     for tmp_file_name in tmp_files.values():
         sort_file_by_timestamp(tmp_file_name)
-        
+
     tmp_merged_files = {}
     processes = []
     for i in range(args.cpus):
