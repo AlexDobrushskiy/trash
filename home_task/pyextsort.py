@@ -6,6 +6,28 @@ __author__ = 'Alex Dobrushskiy'
 from datetime import datetime
 from argparse import ArgumentParser
 from multiprocessing import Process
+from heapq import heapify, heappush, heappop
+
+
+class CustomHeap(object):
+    """
+    A simple class for usign custom predicate (key) with standart heapq module.
+    (c) http://stackoverflow.com/questions/8875706/python-heapq-with-custom-compare-predicate
+    """
+
+    def __init__(self, initial=None, key=lambda x:x):
+        self.key = key
+        if initial:
+            self._data = [(key(item), item) for item in initial]
+            heapify(self._data)
+        else:
+            self._data = []
+
+    def push(self, item):
+        heappush(self._data, (self.key(item), item))
+
+    def pop(self):
+        return heappop(self._data)[1]
 
 
 def process_args():
@@ -114,20 +136,19 @@ def merge_sorted_files(input_files, output_file):
     for index, filename in input_files.items():
         sorted_files[index] = open(filename)
 
-    local_list = []
+    local_list = CustomHeap(key=lambda x: record_timestamp(x[1]))
     #initially fill local_list
     for index, file_obj in sorted_files.items():
         # don't care about StopIteration exception. There is not empty files.
-        local_list.append((index, file_obj.next()))
+        local_list.push((index, file_obj.next()))
 
     while sorted_files:
-        # Complexity of this loop in O(l*n*log(n))  - see function docstring
-        local_list.sort(key=lambda x: record_timestamp(x[1]))
-        index, string_to_write = local_list[0]
-        del local_list[0]
+        # # Complexity of this loop in O(l*n*log(n))  - see function docstring
+        # local_list.sort(key=lambda x: record_timestamp(x[1]))
+        index, string_to_write = local_list.pop()
         output.write(string_to_write)
         try:
-            local_list.append((index, sorted_files[index].next()))
+            local_list.push((index, sorted_files[index].next()))
         except StopIteration:
             del sorted_files[index]
     output.close()
