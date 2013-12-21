@@ -7,6 +7,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 from multiprocessing import Process
 from heapq import heapify, heappush, heappop
+from os import remove
 
 
 class CustomHeap(object):
@@ -146,7 +147,10 @@ def merge_sorted_files(input_files, output_file):
         try:
             local_list.push((index, sorted_files[index].next()))
         except StopIteration:
+            sorted_files[index].close()
+            remove(input_files[index])
             del sorted_files[index]
+            
     output.close()
 
 
