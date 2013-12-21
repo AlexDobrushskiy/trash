@@ -15,7 +15,7 @@ class CustomHeap(object):
     (c) http://stackoverflow.com/questions/8875706/python-heapq-with-custom-compare-predicate
     """
 
-    def __init__(self, initial=None, key=lambda x:x):
+    def __init__(self, initial=None, key=lambda x: x):
         self.key = key
         if initial:
             self._data = [(key(item), item) for item in initial]
@@ -125,10 +125,8 @@ def merge_sorted_files(input_files, output_file):
     This method merges files from 'input_files' dict {id:filename} (
     which are assumed already sorted) to one file name 'output_file' which is sorted too.
 
-    This can be upgraded by using heap instead of list in 'local_list' variable.
-    Now complexity is O(l*n*log(n)), where l - total number of records, n - number of
+    Complexity is O(l*log(n)), where l - total number of records, n - number of
     temporary files.
-    In case of using heap complexity will be O(l*n).
     """
     output = open(output_file, 'w')
 
@@ -143,8 +141,6 @@ def merge_sorted_files(input_files, output_file):
         local_list.push((index, file_obj.next()))
 
     while sorted_files:
-        # # Complexity of this loop in O(l*n*log(n))  - see function docstring
-        # local_list.sort(key=lambda x: record_timestamp(x[1]))
         index, string_to_write = local_list.pop()
         output.write(string_to_write)
         try:
@@ -174,8 +170,6 @@ def pack_files_for_processes(cpus, all_files):
 
 
 if __name__ == '__main__':
-    from time import time
-    start = time()
     args = process_args()
 
     tmp_files = separate_to_small_parts(args.input_file, args.memory_limit)
@@ -192,7 +186,6 @@ if __name__ == '__main__':
 
     for process in processes:
         process.join()
-    # TODO merge_sorted_files можно сделать параллельным
 
     tmp_merged_files = {}
     processes = []
@@ -210,5 +203,3 @@ if __name__ == '__main__':
         process.join()
 
     merge_sorted_files(tmp_merged_files, args.output_file)
-
-    print "time of running: {}".format(time()-start)
