@@ -100,7 +100,7 @@ def sort_file_by_timestamp(filename):
 
 def merge_sorted_files(input_files, output_file):
     """
-    Thie method merges files from 'input_files' dict {id:filename} (
+    This method merges files from 'input_files' dict {id:filename} (
     which are assumed already sorted) to one file name 'output_file' which is sorted too.
 
     This can be upgraded by using heap instead of list in 'local_list' variable.
@@ -153,6 +153,8 @@ def pack_files_for_processes(cpus, all_files):
 
 
 if __name__ == '__main__':
+    from time import time
+    start = time()
     args = process_args()
 
     tmp_files = separate_to_small_parts(args.input_file, args.memory_limit)
@@ -164,11 +166,28 @@ if __name__ == '__main__':
         if files_for_processes.get(i):
             processes.append(Process(target=sort_several_files, args=(files_for_processes[i],)))
 
-    for thread in processes:
-        thread.start()
+    for process in processes:
+        process.start()
 
-    for thread in processes:
-        thread.join()
-    merge_sorted_files(tmp_files, args.output_file)
+    for process in processes:
+        process.join()
+    # TODO merge_sorted_files можно сделать параллельным
 
+    tmp_merged_files = {}
+    processes = []
+    for i in range(args.cpus):
+        if files_for_processes.get(i):
+            tmp_output_name = 'tmp_output' + str(i)
+            processes.append(Process(target=merge_sorted_files,
+                                     args=(files_for_processes[i], tmp_output_name)))
+            tmp_merged_files[i] = tmp_output_name
 
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    merge_sorted_files(tmp_merged_files, args.output_file)
+
+    print "time of running: {}".format(time()-start)
